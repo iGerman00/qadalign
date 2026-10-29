@@ -542,6 +542,13 @@ $("tool-split").onclick = () => editSelection(t => t.replace(/[ \t]+/g, "\n"));
 $("tool-join").onclick = () => editSelection(t => t.replace(/\s*\n\s*/g, " "));
 $("tool-tags").onclick = () => {
   const ta = $("lyrics");
-  ta.value = ta.value.split(/\r?\n/).filter(l => !/\[[^\]]*\]/.test(l)).join("\n");
+  const out = [];
+  for (const line of ta.value.split(/\r?\n/)) {
+    const tagged = /\[[^\]]*\]/.test(line);
+    const text = line.replace(/\[[^\]]*\]/g, "").trim();
+    if (tagged && !text) continue;      // nothing but tags, e.g. [Verse 1]
+    out.push(tagged ? text : line);     // otherwise keep the words
+  }
+  ta.value = out.join("\n");
   ta.focus();
 };
