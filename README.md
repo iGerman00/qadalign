@@ -145,11 +145,11 @@ This project is mostly LLM-written as a proof of concept. The LLM was guided by 
 
 ## Licence
 
-Apache-2.0. See LICENSE and NOTICE. The encoder is the Aurora ASR model
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). The encoder is the Aurora ASR model
 (Apache-2.0) by AuroraAI-Research; the phone head, sung head and alignment
 pipeline are this project's.
 
 Pronunciation data in `qadalign/data/cmudict.txt.gz` is derived from the Carnegie
 Mellon Pronouncing Dictionary, BSD-2-Clause, and is bundled so the package needs
 no GPL-licensed dependency at runtime. The full notice is in
-`qadalign/data/CMUDICT-LICENSE`, `web/LICENSES.md`.
+[qadalign/data/CMUDICT-LICENSE](qadalign/data/CMUDICT-LICENSE) and [`web/LICENSES.md`](web/LICENSES.md).
