@@ -55,8 +55,11 @@ function parseLyrics(text, dict) {
     const words = [];
     for (const tok of sung.split(/\s+/)) {
       if (!tok || !/[A-Za-z0-9]/.test(tok) || /^\*+$/.test(tok)) continue;
-      const key = tok.toLowerCase().replace(/[()]/g, "").replace(/[^a-z']/g, "").replace(/’/g, "'");
-      const ph = dict.get(key) || dict.get(key.split("'")[0]);
+      const key = tok.toLowerCase().replace(/’/g, "'").replace(/[^a-z']/g, "");
+      // a straight quote before a word ('good') must not defeat the lookup, but
+      // leading-apostrophe entries ('em, 'til) have to keep working
+      const bare = key.replace(/^'+|'+$/g, "");
+      const ph = dict.get(key) || dict.get(bare) || dict.get(bare.split("'")[0]);
       if (ph) words.push({ text: tok, phones: ph });
     }
     lines.push({ text: raw.trim(), words });

@@ -95,10 +95,15 @@ def phones_for(word: str, oov: dict | None = None) -> list[str] | None:
     w = _clean(word)
     if not w or _NONLEXICAL.match(w):
         return None
-    entry = _D.get(w)
-    if entry:
-        out = [re.sub(r"\d", "", p) for p in entry]
-        return [p for p in out if p in PHONE2ID] or None
+    # exact first, so leading-apostrophe entries ('em, 'til) still match;
+    # then without surrounding quotes, for words written as 'good'
+    for cand in (w, w.strip("'")):
+        entry = _D.get(cand)
+        if entry:
+            out = [re.sub(r"\d", "", p) for p in entry]
+            ph = [p for p in out if p in PHONE2ID]
+            if ph:
+                return ph
     if oov is not None and w in oov:
         return oov[w] or None
     phones = [p for p in _espeak(w) if p in PHONE2ID]
