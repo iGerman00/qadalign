@@ -1,7 +1,7 @@
 # qadalign
 
 > [!Note]
-> Check out [Vizzy](https://vizzy.io) - our free web-based music video editor that can use the output of this tool to create a karaoke-style video!
+> Check out [Vizzy](https://vizzy.io) - our free web-based music video editor that can use the output of this tool to create a lyrics video!
 
 Qadalign is a "quick and dirty" tool to align plain-text lyrics to an audio file. It returns when each line and each word is sung. It uses a small, bespoke ML model based on [AuroraASR-1M](https://huggingface.co/AuroraAI-Research/AuroraASR-1M). It has 929K parameters, weighs ~3.8 MB at float32 and about 1 MB at int8. It runs offline on CPU, taking around 5 seconds for a four-minute file.
 
