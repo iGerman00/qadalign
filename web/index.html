@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qadalign 0.1 in the browser</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪗</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>qadalign 0.1</h1>
+<p class="note">
+  Align plain-text lyrics to an audio file in the browser using a bespoke small ML model with 929K parameters. Your files and lyrics never leave your browser.
+</p>
+<p class="note">
+  Make your lyrics match <i>exactly</i> what is sung in the audio file. Do not include any [Tags]. Every new line in the lyrics should correspond to a sung line in the audio file. The model is trained on English, so it may not work well for other languages.
+</p>
+<p class="note">
+  Check out <a href="https://vizzy.io" target="_blank" rel="noopener noreferrer">Vizzy</a> for our free web-based music video editor that can use the output of this tool to create a lyrics video!
+</p>
+
+<label for="audio">Audio file</label>
+<input id="audio" type="file" accept="audio/*">
+
+<div id="player-wrap" hidden>
+  <audio id="player" controls></audio>
+</div>
+
+<label for="lyrics">Lyrics</label>
+<div id="lyrics-wrap">
+  <textarea id="lyrics">
+[Verse 1]
+This is a copyright-free song
+In this tiny app
+Because I didn't want to
+Deal with the license crap
+
+[Chorus]
+License crap (license crap!)
+I don't wanna deal with it
+License crap (license crap!)
+I don't want a lawyer
+</textarea>
+  <div class="tools">
+    <button id="tool-split" type="button" title="replace spaces with newlines in the selection">split</button>
+    <button id="tool-join" type="button" title="replace newlines with spaces in the selection">join</button>
+    <button id="tool-tags" type="button" title="delete every line containing a [tag]">erase [tags]</button>
+  </div>
+</div>
+
+<button id="go">Align</button>
+<p id="status"></p>
+
+<div id="downloads" hidden>
+  <button id="dl-words">Download words for Vizzy</button>
+  <button id="dl-lines">Download lines for Vizzy</button>
+</div>
+
+<div id="lines-wrap" hidden>
+  <div id="lines"></div>
+</div>
+
+<pre id="out" hidden></pre>
+
+<footer>
+  Model: Apache-2.0 <br>
+  Pronunciation data: BSD-2-Clause (CMUdict) <br> 
+  See <a href="LICENSES.md">LICENSES.md</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/ort.min.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qadalign"
+version = "0.1.0"
+description = "Tiny forced aligner: plain-text lyrics and an audio file to line and word timings"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+dependencies = [
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "transformers>=4.40",
+    "numpy>=1.24",
+    "soundfile>=0.12",
+]
+
+[project.optional-dependencies]
+export = ["safetensors>=0.4", "onnx>=1.16"]
+
+[project.scripts]
+qadalign = "qadalign.cli:main"
+
+[tool.setuptools]
+packages = ["qadalign", "qadalign.aurora"]
+
+[tool.setuptools.package-data]
+"qadalign" = ["data/*"]
+"qadalign.aurora" = ["*.json"]

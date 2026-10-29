@@ -1,0 +1,95 @@
+:root { color-scheme: dark; }
+
+body {
+  font: 14px/1.5 system-ui, sans-serif;
+  max-width: 46rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: #14161a;
+  color: #e6e8eb;
+}
+
+h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 .25rem; }
+p.note { color: #8b949e; margin: 0 0 1.5rem; }
+label { display: block; margin: 1rem 0 .25rem; font-weight: 600; }
+
+input, textarea, button {
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background: #1c2027;
+  color: #e6e8eb;
+  border: 1px solid #2c323b;
+  border-radius: 4px;
+}
+
+input[type=file] { padding: .4rem; }
+input[type=file]::file-selector-button {
+  background: #232830;
+  color: #e6e8eb;
+  border: 1px solid #3a424d;
+  border-radius: 3px;
+  padding: .35rem .7rem;
+  margin-right: .7rem;
+  cursor: pointer;
+  font: inherit;
+}
+input[type=file]::file-selector-button:hover { background: #2b323c; }
+textarea { height: 11rem; padding: .5rem; padding-right: 11.5rem; font-family: ui-monospace, monospace; font-size: 13px; }
+button { margin-top: 1rem; padding: .5rem; cursor: pointer; }
+button:hover:not(:disabled) { background: #232830; border-color: #3a424d; }
+button:disabled { opacity: .5; cursor: default; }
+
+#status { margin: 1rem 0 0; color: #9aa4af; white-space: pre-wrap; }
+#status.error { color: #ff8a80; }
+
+pre {
+  background: #101318;
+  border: 1px solid #23282f;
+  border-radius: 4px;
+  padding: .75rem;
+  overflow: auto;
+  max-height: 22rem;
+  font-size: 12px;
+  color: #cfd6dd;
+}
+
+#player-wrap { margin-top: .75rem; }
+#player { width: 100%; }
+#lines-wrap { margin-top: 1.25rem; }
+#lyrics-wrap { position: relative; }
+#lyrics-wrap .tools {
+  position: absolute;
+  top: .4rem;
+  right: .4rem;
+  display: flex;
+  gap: .25rem;
+}
+#lyrics-wrap .tools button {
+  width: auto;
+  margin: 0;
+  padding: .15rem .45rem;
+  font-size: 11px;
+  background: #232830;
+  border: 1px solid #3a424d;
+  color: #c9d1d9;
+}
+#lyrics-wrap .tools button:hover { background: #2b323c; }
+#lines {
+  position: relative;
+  max-height: 15rem;
+  overflow: auto;
+  border-top: 1px solid #262b33;
+  padding-top: .5rem;
+}
+.line { padding: .12rem 0; color: #6e7781; }
+.line.cur { color: #fff; font-weight: 600; }
+.line .w { padding: 0 .08rem; }
+.line.cur .w.on { background: #ffd166; color: #14161a; border-radius: 2px; }
+
+#downloads { margin-top: 1rem; display: flex; gap: .5rem; }
+#downloads button { margin-top: 0; flex: 1; }
+#downloads[hidden] { display: none; }
+
+footer { margin-top: 2rem; font-size: 12px; color: #6e7781; }
+a { color: #7ab7ff; }

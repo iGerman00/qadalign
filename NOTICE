@@ -1,0 +1,21 @@
+qadalign 0.1
+
+This product includes software developed by AuroraAI-Research
+(Aurora ASR, https://huggingface.co/AuroraAI-Research/AuroraASR-1M),
+licensed under the Apache License, Version 2.0.
+
+Files under qadalign/aurora/ are unmodified copies of that project's model code.
+
+weights/qadalign-0.1.pt contains weights derived from that project's
+checkpoint, with the output head replaced, and additional weights trained by
+the qadalign contributors.
+
+Pronunciation data in qadalign/data/cmudict.txt.gz and web/cmudict.txt.gz is
+derived from the Carnegie Mellon Pronouncing Dictionary, copyright (C) 1993-2015
+Carnegie Mellon University, BSD-2-Clause. The full notice is in
+qadalign/data/CMUDICT-LICENSE and web/LICENSES.md.
+
+The browser page loads onnxruntime-web (MIT, Microsoft) from a CDN at runtime
+and does not redistribute it.
+
+Copyright 2026 the qadalign contributors

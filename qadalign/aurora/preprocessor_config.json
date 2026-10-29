@@ -1,0 +1,16 @@
+{
+  "auto_map": {
+    "AutoFeatureExtractor": "feature_extraction_auroraasr.AuroraASRFeatureExtractor"
+  },
+  "feature_extractor_type": "AuroraASRFeatureExtractor",
+  "feature_size": 80,
+  "fmax": 8000.0,
+  "fmin": 20.0,
+  "hop_length": 160,
+  "n_fft": 512,
+  "padding_side": "right",
+  "padding_value": 0.0,
+  "return_attention_mask": true,
+  "sampling_rate": 16000,
+  "win_length": 400
+}

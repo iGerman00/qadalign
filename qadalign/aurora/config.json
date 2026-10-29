@@ -1,0 +1,29 @@
+{
+  "architectures": [
+    "AuroraASRForCTC"
+  ],
+  "auto_map": {
+    "AutoConfig": "configuration_auroraasr.AuroraASRConfig",
+    "AutoModelForCTC": "modeling_auroraasr.AuroraASRForCTC"
+  },
+  "blank_token_id": 0,
+  "conv_kernel": 15,
+  "d_model": 128,
+  "dropout": 0.0,
+  "dtype": "float32",
+  "ff_dim": 384,
+  "hop_length": 160,
+  "model_type": "aurora_asr",
+  "n_fft": 512,
+  "n_mels": 80,
+  "num_heads": 4,
+  "num_repeats": 2,
+  "num_unique_blocks": 4,
+  "pad_token_id": 0,
+  "sampling_rate": 16000,
+  "tokenizer_file": "bpe256.model",
+  "transformers_version": "5.14.1",
+  "vocab_size": 257,
+  "weight_quantization": null,
+  "win_length": 400
+}
