@@ -139,6 +139,10 @@ web/                 browser runner, ONNX export, notices
 docs/REPRODUCE.md    how the weights were produced
 ```
 
+## Reproducibility
+
+See [docs/REPRODUCE.md](docs/REPRODUCE.md) for how the weights were produced. The model can be trained from scratch on any dataset of audio and lyrics. Would be cool if someone trained on a different language, mine is English-only.
+
 ## AI disclosure
 
 This project is mostly LLM-written as a proof of concept. The LLM was guided by me for research loops and prototyping and all files have been reviewed manually for slop (because I hate it).
