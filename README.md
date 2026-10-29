@@ -118,6 +118,10 @@ On 52 held-out files, 2.8K lines and 17.3K words with word-level references:
 | word onset within 250 ms | 53% |
 | line-final word duration, median | 1.02x of reference |
 
+On ~532K English tokens from the dataset, 94.49% of words are in CMUdict. The rest are skipped unless `espeak-ng` is installed. There is no `espeak-ng` in the browser however, so the web version will simply skip any word not in CMUdict.
+
+This will still sync lines, but with dropped word-level timing.
+
 ## Failures
 
 - Sustained notes a big weak point. Lines sung below 3.5 phones per second
