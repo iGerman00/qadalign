@@ -5,7 +5,7 @@
 
 Qadalign is a "quick and dirty" tool to align plain-text lyrics to an audio file. It returns when each line and each word is sung. It uses a small, bespoke ML model based on [AuroraASR-1M](https://huggingface.co/AuroraAI-Research/AuroraASR-1M). It has 929K parameters, weighs ~3.8 MB at float32 and about 1 MB at int8. It runs offline on CPU, taking around 5 seconds for a four-minute file.
 
-The quality is passable for a first draft and will save you time compared to doing it manually, but this is a *tiny* experimental model and it will make mistakes. I'm pretty sure it can actually run on a tiny microcontroller if you're keen enough to make a battery out of a couple potatoes and spend a few evenings in debugging pain.
+The quality is passable for a first draft and will save you time compared to doing it manually, but this is a *tiny* experimental model and it will make mistakes. I'm pretty sure it can actually run on a potato-powered microcontroller if you're keen enough to make a battery out of a couple potatoes and spend a few evenings in excruciating debugging pain.
 
 ```
 python -m qadalign.cli audio.mp3 lyrics.txt -o out.json
