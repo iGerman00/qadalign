@@ -1,7 +1,7 @@
 const SR = 16000, NFFT = 512, WIN = 400, HOP = 160, NMEL = 80, FRAME = 0.04;
 
-const PHONES = ["AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH","ER","EY","F","G","HH",
-  "IH","IY","JH","K","L","M","N","NG","OW","OY","P","R","S","SH","T","TH","UH","UW","V","W","Y","Z","ZH"];
+const PHONES = ["AA", "AE", "AH", "AO", "AW", "AY", "B", "CH", "D", "DH", "EH", "ER", "EY", "F", "G", "HH",
+  "IH", "IY", "JH", "K", "L", "M", "N", "NG", "OW", "OY", "P", "R", "S", "SH", "T", "TH", "UH", "UW", "V", "W", "Y", "Z", "ZH"];
 const P2ID = {};
 PHONES.forEach((p, i) => P2ID[p] = i + 1);
 
@@ -111,7 +111,7 @@ function fft(re, im) {
     let bit = n >> 1;
     for (; j & bit; bit >>= 1) j ^= bit;
     j ^= bit;
-    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]];[im[i], im[j]] = [im[j], im[i]]; }
   }
   for (let len = 2; len <= n; len <<= 1) {
     const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
@@ -296,9 +296,11 @@ function wordTimes(path, ext, skipped, words) {
     pi += w.phones.length;
     const f = chunk.filter(Boolean);
     if (!f.length) out.push({ text: w.text, start: null, end: null });
-    else out.push({ text: w.text,
+    else out.push({
+      text: w.text,
       start: Math.min(...f.map(x => x[0])) * FRAME + 0.02,
-      end: Math.max(...f.map(x => x[1])) * FRAME + 0.02 });
+      end: Math.max(...f.map(x => x[1])) * FRAME + 0.02
+    });
   }
   for (let i = 0; i < out.length; i++) {
     if (out[i].start === null) {
@@ -313,7 +315,7 @@ function wordTimes(path, ext, skipped, words) {
 
 // ---------------------------------------------------------------- run
 async function run(file, lyricsText, onProgress) {
-  const notify = onProgress || (() => {});
+  const notify = onProgress || (() => { });
   if (!state.session) {
     notify("model");
     ort.env.wasm.numThreads = 1;
@@ -351,8 +353,10 @@ async function run(file, lyricsText, onProgress) {
       out.push({ text: ln.text, start: prevEnd, end: prevEnd, words: [] });
       continue;
     }
-    out.push({ text: ln.text, start: chunk[0].start, end: chunk[chunk.length - 1].end,
-      words: chunk.map(w => ({ text: w.text, start: w.start, end: w.end })) });
+    out.push({
+      text: ln.text, start: chunk[0].start, end: chunk[chunk.length - 1].end,
+      words: chunk.map(w => ({ text: w.text, start: w.start, end: w.end }))
+    });
     prevEnd = out[out.length - 1].end;
   }
 
@@ -415,6 +419,7 @@ function setPlayer(file) {
 
 // ---------------------------------------------------------------- preview
 let preview = [];
+let previewRaf = 0, previewCur = -1;
 
 function showPreview(res) {
   const p = $("player");
@@ -439,8 +444,13 @@ function showPreview(res) {
   });
 
   $("lines-wrap").hidden = false;
-  p.ontimeupdate = syncPreview;
+  cancelAnimationFrame(previewRaf);
+  previewRaf = 0;
+  previewCur = -1;
+  p.onplay = startPreviewSync;
+  p.onpause = p.onseeked = p.onended = syncPreview;
   syncPreview();
+  startPreviewSync();
 }
 
 function syncPreview() {
@@ -456,12 +466,22 @@ function syncPreview() {
       w.classList.toggle("on", i === cur && t >= +w.dataset.s && t < +w.dataset.e);
     }
   }
-  if (cur >= 0) {
+  if (cur >= 0 && cur !== previewCur) {
     const box = $("lines"), el = preview[cur].el;
     if (el.offsetTop < box.scrollTop || el.offsetTop > box.scrollTop + box.clientHeight - 40) {
       box.scrollTop = el.offsetTop - box.clientHeight / 2;
     }
   }
+  previewCur = cur;
+}
+
+function startPreviewSync() {
+  if (previewRaf) return;
+  const step = () => {
+    syncPreview();
+    previewRaf = $("player").paused ? 0 : requestAnimationFrame(step);
+  };
+  previewRaf = requestAnimationFrame(step);
 }
 
 // ---------------------------------------------------------------- downloads
@@ -472,8 +492,10 @@ function vizzy(kind) {
   const rows = kind === "words"
     ? last.res.lines.flatMap(l => l.words.map(w => ({ text: w.text, start: w.start, end: w.end })))
     : kind === "cumulative"
-      ? last.res.lines.flatMap(l => l.words.map((w, i) => ({ text: l.words.slice(0, i + 1).map(x => x.text).join(" "),
-        start: l.start, end: w.end })))
+      ? last.res.lines.flatMap(l => l.words.map((w, i) => ({
+        text: l.words.slice(0, i + 1).map(x => x.text).join(" "),
+        start: l.start, end: w.end
+      })))
       : last.res.lines.map(l => ({ text: l.text, start: l.start, end: l.end }));
   const suffix = kind === "words" ? "_lyrics_wordlevel.json"
     : kind === "cumulative" ? "_lyrics_cumulative.json" : "_lyrics_linelevel.json";
