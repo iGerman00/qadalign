@@ -471,8 +471,12 @@ function vizzy(kind) {
   if (!last) return;
   const rows = kind === "words"
     ? last.res.lines.flatMap(l => l.words.map(w => ({ text: w.text, start: w.start, end: w.end })))
-    : last.res.lines.map(l => ({ text: l.text, start: l.start, end: l.end }));
-  const suffix = kind === "words" ? "_lyrics_wordlevel.json" : "_lyrics_linelevel.json";
+    : kind === "cumulative"
+      ? last.res.lines.flatMap(l => l.words.map((w, i) => ({ text: l.words.slice(0, i + 1).map(x => x.text).join(" "),
+        start: l.start, end: w.end })))
+      : last.res.lines.map(l => ({ text: l.text, start: l.start, end: l.end }));
+  const suffix = kind === "words" ? "_lyrics_wordlevel.json"
+    : kind === "cumulative" ? "_lyrics_cumulative.json" : "_lyrics_linelevel.json";
   const blob = new Blob([JSON.stringify(rows, null, 1)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -522,6 +526,7 @@ $("go").onclick = async () => {
 };
 
 $("dl-words").onclick = () => vizzy("words");
+$("dl-cumulative").onclick = () => vizzy("cumulative");
 $("dl-lines").onclick = () => vizzy("lines");
 
 $("audio").onchange = () => {
