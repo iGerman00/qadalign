@@ -485,7 +485,26 @@ function startPreviewSync() {
 }
 
 // ---------------------------------------------------------------- downloads
-let last = null;
+let last = null, matchLine = false;
+
+function withLineBoundaries(res) {
+  if (!matchLine) return res;
+  return { lines: res.lines.map(ln => {
+    if (!ln.words.length) return ln;
+    const words = ln.words.slice();
+    words[0] = { ...words[0], start: ln.start };
+    const tail = words[words.length - 1];
+    words[words.length - 1] = { ...tail, end: Math.max(ln.end, tail.end) };
+    return { ...ln, words };
+  }) };
+}
+
+function applyBoundaries() {
+  if (!last) return;
+  last.res = withLineBoundaries(last.raw);
+  showPreview(last.res);
+  $("out").textContent = JSON.stringify(last.res, null, 1);
+}
 
 function vizzy(kind) {
   if (!last) return;
@@ -519,6 +538,7 @@ $("go").onclick = async () => {
   $("out").hidden = true;
   $("out").textContent = "";
   $("downloads").hidden = true;
+  $("match-line-wrap").hidden = true;
   $("status").className = "";
   try {
     if (!$("player").src) setPlayer(file);
@@ -533,11 +553,11 @@ $("go").onclick = async () => {
     });
     const secs = ((performance.now() - t0) / 1000).toFixed(1);
     $("status").textContent = `${res.lines.length} lines in ${secs}s`;
-    last = { res, base: file.name.replace(/\.[^.]+$/, "") };
+    last = { raw: res, res, base: file.name.replace(/\.[^.]+$/, "") };
     $("downloads").hidden = false;
-    showPreview(res);
+    $("match-line-wrap").hidden = false;
     $("out").hidden = false;
-    $("out").textContent = JSON.stringify(res, null, 1);
+    applyBoundaries();
   } catch (e) {
     $("status").className = "error";
     $("status").textContent = "error: " + e.message;
@@ -550,6 +570,7 @@ $("go").onclick = async () => {
 $("dl-words").onclick = () => vizzy("words");
 $("dl-cumulative").onclick = () => vizzy("cumulative");
 $("dl-lines").onclick = () => vizzy("lines");
+$("match-line").onchange = () => { matchLine = $("match-line").checked; applyBoundaries(); };
 
 $("audio").onchange = () => {
   const f = $("audio").files[0];

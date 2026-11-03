@@ -91,5 +91,9 @@ pre {
 #downloads button { margin-top: 0; flex: 1; }
 #downloads[hidden] { display: none; }
 
+label.check { display: flex; align-items: center; gap: .45rem; margin: .75rem 0 0; font-weight: 400; }
+label.check input { width: auto; margin: 0; }
+label.check[hidden] { display: none; }
+
 footer { margin-top: 2rem; font-size: 12px; color: #6e7781; }
 a { color: #7ab7ff; }
