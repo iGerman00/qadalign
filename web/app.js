@@ -506,15 +506,25 @@ function applyBoundaries() {
   $("out").textContent = JSON.stringify(last.res, null, 1);
 }
 
+function cumulativeRows(lines) {
+  const rows = [];
+  for (const l of lines) {
+    let prev = l.start;
+    for (let i = 0; i < l.words.length; i++) {
+      const end = Math.max(prev, l.words[i].end);
+      rows.push({ text: l.words.slice(0, i + 1).map(w => w.text).join(" "), start: prev, end });
+      prev = end;
+    }
+  }
+  return rows;
+}
+
 function vizzy(kind) {
   if (!last) return;
   const rows = kind === "words"
     ? last.res.lines.flatMap(l => l.words.map(w => ({ text: w.text, start: w.start, end: w.end })))
     : kind === "cumulative"
-      ? last.res.lines.flatMap(l => l.words.map((w, i) => ({
-        text: l.words.slice(0, i + 1).map(x => x.text).join(" "),
-        start: l.start, end: w.end
-      })))
+      ? cumulativeRows(last.res.lines)
       : last.res.lines.map(l => ({ text: l.text, start: l.start, end: l.end }));
   const suffix = kind === "words" ? "_lyrics_wordlevel.json"
     : kind === "cumulative" ? "_lyrics_cumulative.json" : "_lyrics_linelevel.json";
