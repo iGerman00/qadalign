@@ -2,16 +2,21 @@
 from __future__ import annotations
 
 import numpy as np
-import torch
 
 SR = 16000
+
+
+def _torch():
+    """Decoding cached posteriors needs neither torch nor torchaudio, leaving this on demand"""
+    import torch
+    return torch
 
 
 def load_audio(path, sr: int = SR) -> np.ndarray:
     """Mono float32 at `sr`, regardless of the container or source rate."""
     wav, got = _read(path)
     if got != sr:
-        wav = torch.from_numpy(wav)
+        wav = _torch().from_numpy(wav)
         wav = torchaudio_resample(wav, got, sr)
         wav = wav.numpy()
     return np.ascontiguousarray(wav, dtype=np.float32)
@@ -31,7 +36,7 @@ def _read(path):
         return wav, int(sr)
 
 
-def torchaudio_resample(wav: torch.Tensor, sr_in: int, sr_out: int) -> torch.Tensor:
+def torchaudio_resample(wav, sr_in: int, sr_out: int):
     import torchaudio
     return torchaudio.functional.resample(wav, sr_in, sr_out)
 

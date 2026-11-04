@@ -43,6 +43,245 @@ async function loadDict() {
   return map;
 }
 
+// ---------------------------------------------------------------- g2p
+// Dictionary -> compounds, digits, morphology -> letter to sound.
+const ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+const ORD = {"zero": "zeroth", "one": "first", "two": "second", "three": "third", "four": "fourth", "five": "fifth", "six": "sixth", "seven": "seventh", "eight": "eighth", "nine": "ninth", "ten": "tenth", "eleven": "eleventh", "twelve": "twelfth", "thirteen": "thirteenth", "fourteen": "fourteenth", "fifteen": "fifteenth", "sixteen": "sixteenth", "seventeen": "seventeenth", "eighteen": "eighteenth", "nineteen": "nineteenth", "twenty": "twentieth", "thirty": "thirtieth", "forty": "fortieth", "fifty": "fiftieth", "sixty": "sixtieth", "seventy": "seventieth", "eighty": "eightieth", "ninety": "ninetieth", "hundred": "hundredth", "thousand": "thousandth"};
+const SIBILANT = new Set(["CH", "JH", "S", "SH", "Z", "ZH"]);
+const VOICELESS = new Set(["CH", "F", "K", "P", "S", "SH", "T", "TH"]);
+const VOICED = new Set(["AA", "AE", "AH", "AO", "AW", "AY", "B", "D", "DH", "EH", "ER", "EY", "G", "IH", "IY", "L", "M", "N", "NG", "OW", "OY", "R", "UH", "UW", "V", "W", "Y", "Z"]);
+const VOWELS = new Set(["AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"]);
+const C_SOFT = "eiy";
+const MAGIC = {"a": "EY", "e": "IY", "i": "AY", "o": "OW", "u": "UW"};
+const ADD = [["n't", ["AH", "N", "T"]], ["'ll", ["L"]], ["'re", ["R"]], ["'ve", ["V"]], ["'m", ["M"]], ["'s", "plural"], ["'d", "past"], ["'", []], ["ings", ["IH", "NG", "Z"]], ["less", ["L", "AH", "S"]], ["ness", ["N", "AH", "S"]], ["ment", ["M", "AH", "N", "T"]], ["able", ["AH", "B", "AH", "L"]], ["ible", ["AH", "B", "AH", "L"]], ["est", ["IH", "S", "T"]], ["ing", ["IH", "NG"]], ["in'", ["IH", "NG"]], ["ed", "past"], ["es", "plural"], ["er", ["ER"]], ["ly", ["L", "IY"]], ["s", "plural"], ["in", ["IH", "NG"]]];
+const PREFIX = ["un", "re", "dis", "mis", "pre", "non", "over", "under", "out", "sub", "super", "semi", "anti", "multi", "micro", "post", "co"];
+const LTS = [["ough", ["AO"]], ["augh", ["AO"]], ["eigh", ["EY"]], ["tion", ["SH", "AH", "N"]], ["sion", ["ZH", "AH", "N"]], ["ight", ["AY", "T"]], ["cial", ["SH", "AH", "L"]], ["tial", ["SH", "AH", "L"]], ["ture", ["CH", "ER"]], ["sure", ["ZH", "ER"]], ["kn", ["N"]], ["wr", ["R"]], ["igh", ["AY"]], ["air", ["EH", "R"]], ["eer", ["IH", "R"]], ["ear", ["IH", "R"]], ["oor", ["AO", "R"]], ["our", ["AW", "ER"]], ["ore", ["AO", "R"]], ["are", ["EH", "R"]], ["ere", ["IH", "R"]], ["ire", ["AY", "R"]], ["ure", ["Y", "UH", "R"]], ["dge", ["JH"]], ["tch", ["CH"]], ["sch", ["S", "K"]], ["ous", ["AH", "S"]], ["ble", ["B", "AH", "L"]], ["tle", ["T", "AH", "L"]], ["cle", ["K", "AH", "L"]], ["gle", ["G", "AH", "L"]], ["ple", ["P", "AH", "L"]], ["dle", ["D", "AH", "L"]], ["th", ["TH"]], ["sh", ["SH"]], ["ch", ["CH"]], ["ph", ["F"]], ["wh", ["W"]], ["ck", ["K"]], ["ng", ["NG"]], ["qu", ["K", "W"]], ["gh", []], ["ee", ["IY"]], ["ea", ["IY"]], ["ei", ["EY"]], ["ey", ["EY"]], ["ie", ["IY"]], ["ai", ["EY"]], ["ay", ["EY"]], ["oa", ["OW"]], ["oe", ["OW"]], ["oi", ["OY"]], ["oy", ["OY"]], ["oo", ["UW"]], ["ou", ["AW"]], ["ow", ["OW"]], ["au", ["AO"]], ["aw", ["AO"]], ["ue", ["UW"]], ["ui", ["UW"]], ["ew", ["UW"]], ["eu", ["UW"]], ["ar", ["AA", "R"]], ["or", ["AO", "R"]], ["er", ["ER"]], ["ir", ["ER"]], ["ur", ["ER"]], ["ss", ["S"]], ["ll", ["L"]], ["tt", ["T"]], ["pp", ["P"]], ["mm", ["M"]], ["nn", ["N"]], ["dd", ["D"]], ["ff", ["F"]], ["rr", ["R"]], ["bb", ["B"]], ["gg", ["G"]], ["cc", ["K"]], ["zz", ["Z"]], ["a", ["AE"]], ["e", ["EH"]], ["i", ["IH"]], ["o", ["AA"]], ["u", ["AH"]], ["y", ["IY"]], ["b", ["B"]], ["c", ["K"]], ["d", ["D"]], ["f", ["F"]], ["g", ["G"]], ["h", ["HH"]], ["j", ["JH"]], ["k", ["K"]], ["l", ["L"]], ["m", ["M"]], ["n", ["N"]], ["p", ["P"]], ["q", ["K"]], ["r", ["R"]], ["s", ["S"]], ["t", ["T"]], ["v", ["V"]], ["w", ["W"]], ["x", ["K", "S"]], ["z", ["Z"]]];
+
+function numberWords(digits) {
+  const n = digits.length;
+  if (!n) return [];
+  if (n <= 2) {
+    const v = parseInt(digits, 10);
+    if (v < 20) return [ONES[v]];
+    const t = Math.floor(v / 10), u = v % 10;
+    return u === 0 ? [TENS[t]] : [TENS[t], ONES[u]];
+  }
+  if (n === 4 && digits.slice(2) === "00") return [ONES[+digits[0]], "thousand"];
+  if (n === 4 && (digits.slice(0, 2) === "19" || digits.slice(0, 2) === "20")) {
+    const first = numberWords(digits.slice(0, 2)), rest = digits.slice(2);
+    if (rest[0] === "0") return first.concat(["oh", ONES[+rest[1]]]);
+    return first.concat(numberWords(rest));
+  }
+  return [...digits].map(c => (c === "0" ? "oh" : ONES[+c]));
+}
+
+function ordinal(words) {
+  if (!words.length || !(words[words.length - 1] in ORD)) return words;
+  return words.slice(0, -1).concat([ORD[words[words.length - 1]]]);
+}
+
+function dictLookup(w, dict) {
+  const e = dict.get(w);
+  if (!e) return null;
+  const ph = e.filter(p => P2ID[p]);
+  return ph.length ? ph : null;
+}
+
+function plural(ph) {
+  const last = ph.length ? ph[ph.length - 1] : "S";
+  if (SIBILANT.has(last)) return ph.concat(["IH", "Z"]);
+  return ph.concat([VOICED.has(last) ? "Z" : "S"]);
+}
+
+function past(ph) {
+  const last = ph.length ? ph[ph.length - 1] : "T";
+  if (last === "T" || last === "D") return ph.concat(["IH", "D"]);
+  return ph.concat([VOICELESS.has(last) ? "T" : "D"]);
+}
+
+function applyAdd(base, add) {
+  if (add === "plural") return plural(base);
+  if (add === "past") return past(base);
+  return base.concat(add || []);
+}
+
+function stemForms(stem) {
+  const out = [stem + "e", stem];
+  if (stem.length > 2) {
+    if (stem[stem.length - 1] === stem[stem.length - 2]) out.push(stem.slice(0, -1));
+    out.push(stem.slice(0, -1));
+  }
+  return out;
+}
+
+function resolve(w, dict, depth) {
+  const ph = dictLookup(w, dict);
+  if (ph) return ph;
+  if (depth >= 3 || w.length < 4) return null;
+  for (const [suf, add] of ADD) {
+    if (!w.endsWith(suf) || w.length - suf.length < 2) continue;
+    for (const cand of stemForms(w.slice(0, w.length - suf.length))) {
+      const base = resolve(cand, dict, depth + 1);
+      if (base) return applyAdd(base, add);
+    }
+  }
+  for (const pre of PREFIX) {
+    const rest = w.slice(pre.length);
+    if (!w.startsWith(pre) || rest.length < 3) continue;
+    const base = resolve(rest, dict, depth + 1);
+    if (base) return base;
+  }
+  return null;
+}
+
+// Two dictionary words written as one like lovestruck, raindrop, homesick.
+function glued(w, dict) {
+  if (w.length < 6) return null;
+  for (let cut = w.length - 3; cut > 2; cut--) {
+    const a = dictLookup(w.slice(0, cut), dict), b = dictLookup(w.slice(cut), dict);
+    if (a && b) return a.concat(b);
+  }
+  return null;
+}
+
+// Letter to sound
+function lts(w) {
+  const out = [];
+  let i = 0;
+  const n = w.length;
+  while (i < n) {
+    const ch = w[i];
+    if (ch === "'") { i++; continue; }
+    // a final e is silent, and it lengthens the vowel two letters back
+    if (ch === "e" && i === n - 1 && n > 2) { i++; continue; }
+    if (MAGIC[ch] && i + 2 === n - 1 && w[i + 2] === "e" && !"hrw".includes(w[i + 1])) {
+      out.push(MAGIC[ch]); i++; continue;
+    }
+    let hit = false;
+    for (const [src, ph] of LTS) {
+      if (!w.startsWith(src, i)) continue;
+      let emit = ph;
+      if (src === "c" && i + 1 < n && C_SOFT.includes(w[i + 1])) emit = ["S"];
+      else if (src === "g" && i + 1 < n && C_SOFT.includes(w[i + 1])) emit = ["JH"];
+      out.push(...emit);
+      i += src.length;
+      hit = true;
+      break;
+    }
+    if (!hit) i++;
+  }
+  if (out.length && !out.some(p => VOWELS.has(p))) out.push("AH");
+  return out;
+}
+
+// Phones for a token whose pronunciation comes from digits.
+function digitPhones(tok, dict) {
+  const digits = tok.replace(/[^0-9A-Za-z]/g, "");
+  let words;
+  if (/^\d+$/.test(digits)) {
+    words = numberWords(digits);
+  } else {
+    const m = /^(\d+)(st|nd|rd|th)$/.exec(digits.toLowerCase());
+    if (!m) return null;
+    words = ordinal(numberWords(m[1]));
+  }
+  const out = [];
+  for (const word of words) {
+    const ph = dictLookup(word, dict) || lts(word);
+    if (!ph.length) return null;
+    out.push(...ph);
+  }
+  return out;
+}
+
+function resolvePhones(word, dict, depth) {
+  const raw = word.trim();
+  depth = depth || 0;
+  // hyphenated, slashed and ampersand compounds, part by part
+  if (/[-/&+]/.test(raw)) {
+    const parts = raw.split(/[-/&+]/).filter(p => /[A-Za-z0-9]/.test(p));
+    if (parts.length > 1) {
+      const out = [];
+      let ok = true;
+      for (const part of parts) {
+        const sub = resolvePhones(part, dict, depth);
+        if (!sub) { ok = false; break; }
+        out.push(...sub);
+      }
+      if (ok && out.length) return out;
+    }
+  }
+  if (/\d/.test(raw)) {
+    const ph = digitPhones(raw, dict);
+    if (ph) return ph;
+    if (/[A-Za-z]/.test(raw)) {
+      const out = [];
+      for (const part of raw.match(/\d+|[A-Za-z']+/g) || []) {
+        const sub = part[0] >= "0" && part[0] <= "9"
+          ? digitPhones(part, dict) : resolvePhones(part, dict, depth);
+        if (!sub) return null;
+        out.push(...sub);
+      }
+      return out.length ? out : null;
+    }
+  }
+  const w = raw.toLowerCase().replace(/’/g, "'").replace(/[^a-z']/g, "");
+  if (!w) return null;
+  // exact first, so leading-apostrophe entries ('em, 'til) still match; then
+  // without surrounding quotes, for words written as 'good'; then the part
+  // before an internal apostrophe, for rock'n'roll
+  const bare = w.replace(/^'+|'+$/g, "");
+  const cands = bare !== w ? [w, bare] : [w];
+  if (bare.includes("'")) cands.push(bare.split("'")[0]);
+  for (const cand of cands) {
+    const ph = dictLookup(cand, dict);
+    if (ph) return ph;
+  }
+  const ph = resolve(w, dict, 0)
+    || (w.includes("'") ? resolve(w.replace(/'/g, ""), dict, 0) : null)
+    || glued(w, dict)
+    || lts(w);
+  return ph && ph.length ? ph : null;
+}
+
+// Placeholder phones for a word no step can pronounce, one per syllable. The
+// CTC path still needs something to stretch over the sung syllables, or the
+// word has no time of its own.
+const VOWEL_LETTERS = new Set("aeiouyàáâãäåæèéêëìíîïòóôõöøùúûüýÿаеёиоуыэюяіїє"
+  .split("").concat("αεηιουωάέήίόύώ".split("")));
+
+// Cyrillic read letter by letter. Not Russian phonology, but the consonants
+// delimit words for the CTC path and the vowels give it length.
+const CYRILLIC = {"а": ["AA"], "б": ["B"], "в": ["V"], "г": ["G"], "д": ["D"], "е": ["EH"], "ё": ["OW"], "ж": ["ZH"], "з": ["Z"], "и": ["IY"], "й": ["Y"], "к": ["K"], "л": ["L"], "м": ["M"], "н": ["N"], "о": ["AA"], "п": ["P"], "р": ["R"], "с": ["S"], "т": ["T"], "у": ["UW"], "ф": ["F"], "х": ["HH"], "ц": ["T", "S"], "ч": ["CH"], "ш": ["SH"], "щ": ["SH"], "ъ": [], "ы": ["IH"], "ь": [], "э": ["EH"], "ю": ["UW"], "я": ["AA"], "і": ["IY"], "ї": ["IY"], "є": ["EH"], "ґ": ["G"]};
+const CYR_IOTATED = new Set(["е", "ю", "я", "ё", "є", "ї"]);
+const CYR_VOWELS = new Set(["а", "е", "и", "о", "у", "ы", "э", "ю", "я", "ё", "є", "і", "ї"]);
+
+function cyrillicPhones(w) {
+  const cs = [...w];
+  if (!cs.some(c => c in CYRILLIC)) return null;
+  const out = [];
+  for (let i = 0; i < cs.length; i++) {
+    const ch = cs[i], ph = CYRILLIC[ch];
+    if (!ph) continue;                      // ь, ъ and anything else silent
+    if (CYR_IOTATED.has(ch) &&
+        (i === 0 || CYR_VOWELS.has(cs[i - 1]) || "ьъй".includes(cs[i - 1]))) out.push("Y");
+    out.push(...ph);
+  }
+  if (out.length && !out.some(p => VOWELS.has(p))) out.push("AH");
+  return out.length ? out : null;
+}
+
+function skeleton(word) {
+  const w = word.toLowerCase();
+  const cyr = cyrillicPhones(w);
+  if (cyr) return cyr;
+  const letters = [...w].filter(c => /\p{L}/u.test(c));
+  let k = letters.filter(c => VOWEL_LETTERS.has(c)).length;
+  if (!k) k = Math.ceil(letters.length / 3);   // no vowel letters we know
+  return new Array(Math.max(1, Math.min(k, 6))).fill("AH");
+}
+
 // ---------------------------------------------------------------- lyrics
 // The text is kept exactly as typed: word tokens keep their case and
 // punctuation, and every line keeps its original string. Section tags are not
@@ -54,13 +293,12 @@ function parseLyrics(text, dict) {
     const sung = raw.replace(/\[[^\]]*\]/g, " ");
     const words = [];
     for (const tok of sung.split(/\s+/)) {
-      if (!tok || !/[A-Za-z0-9]/.test(tok) || /^\*+$/.test(tok)) continue;
-      const key = tok.toLowerCase().replace(/’/g, "'").replace(/[^a-z']/g, "");
-      // a straight quote before a word ('good') must not defeat the lookup, but
-      // leading-apostrophe entries ('em, 'til) have to keep working
-      const bare = key.replace(/^'+|'+$/g, "");
-      const ph = dict.get(key) || dict.get(bare) || dict.get(bare.split("'")[0]);
-      if (ph) words.push({ text: tok, phones: ph });
+      // any script counts: a Cyrillic or CJK word is still a word
+      if (!tok || !/[\p{L}\p{N}]/u.test(tok) || /^\*+$/.test(tok)) continue;
+      // a word nothing can pronounce gets placeholder vowels, one per
+      // syllable, so it keeps its place and still takes audio
+      const ph = resolvePhones(tok, dict);
+      words.push({ text: tok, phones: ph || skeleton(tok), skel: !ph });
     }
     lines.push({ text: raw.trim(), words });
   }
@@ -302,15 +540,85 @@ function wordTimes(path, ext, skipped, words) {
       end: Math.max(...f.map(x => x[1])) * FRAME + 0.02
     });
   }
-  for (let i = 0; i < out.length; i++) {
-    if (out[i].start === null) {
-      const nxt = out.slice(i + 1).find(x => x.start !== null);
-      const prv = out.slice(0, i).reverse().find(x => x.end !== null);
-      out[i].start = nxt ? nxt.start : (prv ? prv.end : 0);
-      out[i].end = prv ? prv.end : (nxt ? nxt.start : 0);
-    }
-  }
   return out;
+}
+
+// ---------------------------------------------------------------- placement
+// A word the path skipped, or a whole line it skipped, has no measured time.
+// Those words share the silence between their neighbours in proportion to
+// their syllables, and such a line is spread over the gap between the lines
+// around it. Mirrors place_words in qadalign/align.py.
+const SYL_DUR = 0.30;
+
+function syllables(text) {
+  const m = text.toLowerCase().replace(/[^a-z]/g, "").match(/[aeiouy]+/g);
+  return Math.max(1, m ? m.length : 0);
+}
+
+function fillGap(words, lo, hi) {
+  const n = words.length;
+  let i = 0;
+  while (i < n) {
+    if (words[i].start !== null) { i++; continue; }
+    let j = i;
+    while (j + 1 < n && words[j + 1].start === null) j++;
+    let a = i > 0 ? words[i - 1].end : lo;
+    let b = j + 1 < n ? words[j + 1].start : hi;
+    if (a === null || a === undefined) a = 0;
+    if (b === null || b === undefined || b < a) b = a;
+    let total = 0;
+    for (let k = i; k <= j; k++) total += syllables(words[k].text);
+    if (!total) total = 1;
+    let t = a;
+    const span = b - a;
+    for (let k = i; k <= j; k++) {
+      const d = span * syllables(words[k].text) / total;
+      words[k].start = t;
+      words[k].end = t + d;
+      t += d;
+    }
+    i = j + 1;
+  }
+}
+
+function placeWords(lines) {
+  const anchors = lines.map(ln => {
+    const w = ln.words.find(w => w.start !== null);
+    return w ? w.start : null;
+  });
+  let prevEnd = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i], words = ln.words;
+    if (!words.length) { ln.start = ln.end = prevEnd; continue; }
+    let nxt = null;
+    for (let j = i + 1; j < lines.length; j++) if (anchors[j] !== null) { nxt = anchors[j]; break; }
+    const here = anchors[i];
+    if (here === null) {
+      const lo = prevEnd + 0.02;
+      let hi = nxt !== null ? nxt - 0.05
+        : lo + SYL_DUR * words.reduce((s, w) => s + syllables(w.text), 0);
+      fillGap(words, lo, Math.max(hi, lo));
+    } else {
+      const lead = words.findIndex(w => w.start !== null);
+      let last = words.length - 1;
+      while (last >= 0 && words[last].start === null) last--;
+      let lo = here;
+      if (lead) {
+        const want = SYL_DUR * words.slice(0, lead).reduce((s, w) => s + syllables(w.text), 0);
+        lo = Math.max(prevEnd + 0.02, here - want);
+      }
+      let hi = words[last].end;
+      if (last < words.length - 1) {
+        hi += SYL_DUR * words.slice(last + 1).reduce((s, w) => s + syllables(w.text), 0);
+        if (nxt !== null) hi = Math.min(hi, nxt - 0.05);
+        hi = Math.max(hi, words[last].end);
+      }
+      fillGap(words, lo, hi);
+    }
+    ln.start = words[0].start;
+    ln.end = words[words.length - 1].end;
+    prevEnd = ln.end;
+  }
 }
 
 // ---------------------------------------------------------------- run
@@ -326,7 +634,7 @@ async function run(file, lyricsText, onProgress) {
   const dict = await loadDict();
   const parsed = parseLyrics(lyricsText, dict);
   const flat = parsed.flatMap(l => l.words);
-  if (!flat.length) throw new Error("no pronounceable words in the lyrics");
+  if (!flat.length) throw new Error("no lyric words found");
 
   notify("audio");
   const x = await toMono16k(file);
@@ -344,20 +652,14 @@ async function run(file, lyricsText, onProgress) {
   const words = wordTimes(path, ext, skipped, flat);
 
   const out = [];
-  let k = 0, prevEnd = 0;
+  let k = 0;
   for (const ln of parsed) {
-    const chunk = words.slice(k, k + ln.words.length);
+    out.push({ text: ln.text, words: words.slice(k, k + ln.words.length) });
     k += ln.words.length;
-    if (!chunk.length) {
-      // a line with nothing singable, such as a section tag: keep it, untimed
-      out.push({ text: ln.text, start: prevEnd, end: prevEnd, words: [] });
-      continue;
-    }
-    out.push({
-      text: ln.text, start: chunk[0].start, end: chunk[chunk.length - 1].end,
-      words: chunk.map(w => ({ text: w.text, start: w.start, end: w.end }))
-    });
-    prevEnd = out[out.length - 1].end;
+  }
+  placeWords(out);
+  for (const ln of out) {
+    ln.words = ln.words.map(w => ({ text: w.text, start: w.start, end: w.end }));
   }
 
   for (const ln of out) {
@@ -485,10 +787,10 @@ function startPreviewSync() {
 }
 
 // ---------------------------------------------------------------- downloads
-let last = null, matchLine = false;
+let last = null;
 
 function withLineBoundaries(res) {
-  if (!matchLine) return res;
+  if (!$("match-line").checked) return res;
   return { lines: res.lines.map(ln => {
     if (!ln.words.length) return ln;
     const words = ln.words.slice();
@@ -580,7 +882,7 @@ $("go").onclick = async () => {
 $("dl-words").onclick = () => vizzy("words");
 $("dl-cumulative").onclick = () => vizzy("cumulative");
 $("dl-lines").onclick = () => vizzy("lines");
-$("match-line").onchange = () => { matchLine = $("match-line").checked; applyBoundaries(); };
+$("match-line").onchange = applyBoundaries;
 
 $("audio").onchange = () => {
   const f = $("audio").files[0];

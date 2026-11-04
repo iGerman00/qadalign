@@ -13,7 +13,10 @@
   Align plain-text lyrics to an audio file in the browser using a bespoke small ML model with 929K parameters. Your files and lyrics never leave your browser. <a href="https://github.com/iGerman00/qadalign" target="_blank" rel="noopener noreferrer">qadalign is open-source on GitHub</a>
 </p>
 <p class="note">
-  Make sure your lyrics match <i>exactly</i> what is sung in the audio file. Do not include any [Tags]. Every new line in the lyrics should correspond to a sung line in the audio file. The model is trained on English, so it may not work well for other languages.
+  <b>Make sure your lyrics match <i>exactly</i></b> what is sung in the audio file. Do not include any [Tags]. Every new line in the lyrics should correspond to a sung line in the audio file. The model is trained on English, so it may not work well for other languages.
+</p>
+<p class="note">
+  This app adopts a "fake it till you make it" approach to out-of-scope pronunciation since the model is quite robust to aligning even wildly mispronounced words, but it is not magic. The more you move out of the perfect scenario (English + present in CMUdict), the bigger the chance of misalignment.
 </p>
 <p class="note">
   Check out <a href="https://vizzy.io" target="_blank" rel="noopener noreferrer">Vizzy</a> for our free web-based music video editor that can use the output of this tool to create a lyrics video!

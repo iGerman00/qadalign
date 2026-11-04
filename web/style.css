@@ -12,6 +12,7 @@ body {
 h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 .25rem; }
 p.note { color: #8b949e; margin: 0 0 1.5rem; }
 label { display: block; margin: 1rem 0 .25rem; font-weight: 600; }
+b { color: #e6e8eb; font-weight: 600; }
 
 input, textarea, button {
   font: inherit;

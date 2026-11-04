@@ -34,8 +34,7 @@ assigned to no lyric.
 pip install -e .
 ```
 
-CMUdict handles ordinary English vocabulary. `espeak-ng` is optional and only
-consulted for words CMUdict lacks; without it those words are skipped.
+CMUdict handles ordinary English vocabulary. Contractions, suffixes, prefixes, hyphenated compounds and numbers are constructed. `espeak-ng` is optional and consulted next. Without it (i.e. in the browser), a letter-to-sound pass covers what is left. Cyrillic is read letter by letter, and a word in any other script gets a placeholder vowel per syllable, so it still takes time and keeps its place in the output.
 
 ## Use
 
@@ -118,9 +117,7 @@ On 52 held-out files, 2.8K lines and 17.3K words with word-level references:
 | word onset within 250 ms | 53% |
 | line-final word duration, median | 1.02x of reference |
 
-On ~532K English tokens from the dataset, 94.49% of words are in CMUdict. The rest are skipped unless `espeak-ng` is installed. There is no `espeak-ng` in the browser however, so the web version will simply skip any word not in CMUdict.
-
-This will still sync lines, but with dropped word-level timing.
+On the 18.0K word tokens, 98.1% take their pronunciation from the dictionary and the grammar rules, and the rest from the letter-to-sound pass in the browser, or espeak-ng where it is installed. A token in any other uncovered script gets a placeholder vowel per syllable, and a word the CTC path leaves with no audio is timed from its neighbours.
 
 ## Failures
 

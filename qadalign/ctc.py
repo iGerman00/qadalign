@@ -91,7 +91,9 @@ def word_spans(spans, words, hop=0.04, half=0.02):
     """Group phone spans into word spans.
 
     `words` is [{w, phones}] with phones in the order they were targeted. A word
-    with no frames of its own inherits its neighbour's boundary.
+    with no frames of its own, because it has no pronunciation or the path
+    skipped it, keeps None start and end; `align.place_words` times it from its
+    neighbours.
     """
     out, pi = [], 0
     for w in words:
@@ -106,12 +108,6 @@ def word_spans(spans, words, hop=0.04, half=0.02):
             b = max(x[1] for x in frames)
             out.append({"w": w.get("w"), "start": a * hop + half,
                         "end": b * hop + half})
-    for i, w in enumerate(out):
-        if w["start"] is None:
-            nxt = next((x["start"] for x in out[i + 1:] if x["start"] is not None), None)
-            prv = next((x["end"] for x in out[i - 1::-1] if x["end"] is not None), None)
-            w["start"] = nxt if nxt is not None else prv
-            w["end"] = prv if prv is not None else nxt
     return out
 
 
