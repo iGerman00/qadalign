@@ -117,7 +117,9 @@ On 52 held-out files, 2.8K lines and 17.3K words with word-level references:
 | word onset within 250 ms | 53% |
 | line-final word duration, median | 1.02x of reference |
 
-On the 18.0K word tokens, 98.1% take their pronunciation from the dictionary and the grammar rules, and the rest from the letter-to-sound pass in the browser, or espeak-ng where it is installed. A token in any other uncovered script gets a placeholder vowel per syllable, and a word the CTC path leaves with no audio is timed from its neighbours.
+On 18.0K word tokens (English), 98.1% take their pronunciation from the dictionary and the grammar rules, and the rest from the letter-to-sound pass in the browser, or espeak-ng where it is installed.
+
+A token in any other uncovered script gets a placeholder vowel per syllable, and a word the CTC path leaves with no audio is timed from its neighbours.
 
 ## Failures
 
