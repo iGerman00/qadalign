@@ -52,6 +52,7 @@ const SIBILANT = new Set(["CH", "JH", "S", "SH", "Z", "ZH"]);
 const VOICELESS = new Set(["CH", "F", "K", "P", "S", "SH", "T", "TH"]);
 const VOICED = new Set(["AA", "AE", "AH", "AO", "AW", "AY", "B", "D", "DH", "EH", "ER", "EY", "G", "IH", "IY", "L", "M", "N", "NG", "OW", "OY", "R", "UH", "UW", "V", "W", "Y", "Z"]);
 const VOWELS = new Set(["AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"]);
+const CONSONANTS = new Set(PHONES.filter(p => !VOWELS.has(p)));
 const C_SOFT = "eiy";
 const MAGIC = {"a": "EY", "e": "IY", "i": "AY", "o": "OW", "u": "UW"};
 const ADD = [["n't", ["AH", "N", "T"]], ["'ll", ["L"]], ["'re", ["R"]], ["'ve", ["V"]], ["'m", ["M"]], ["'s", "plural"], ["'d", "past"], ["'", []], ["ings", ["IH", "NG", "Z"]], ["less", ["L", "AH", "S"]], ["ness", ["N", "AH", "S"]], ["ment", ["M", "AH", "N", "T"]], ["able", ["AH", "B", "AH", "L"]], ["ible", ["AH", "B", "AH", "L"]], ["est", ["IH", "S", "T"]], ["ing", ["IH", "NG"]], ["in'", ["IH", "NG"]], ["ed", "past"], ["es", "plural"], ["er", ["ER"]], ["ly", ["L", "IY"]], ["s", "plural"], ["in", ["IH", "NG"]]];
@@ -251,16 +252,16 @@ function resolvePhones(word, dict, depth) {
 const VOWEL_LETTERS = new Set("aeiouyàáâãäåæèéêëìíîïòóôõöøùúûüýÿаеёиоуыэюяіїє"
   .split("").concat("αεηιουωάέήίόύώ".split("")));
 
-// Cyrillic read letter by letter. Not Russian phonology, but the consonants
-// delimit words for the CTC path and the vowels give it length.
+// Scripts no dictionary or English letter-to-sound rule reaches. Each gives the
+// CTC path a phone count close to the sung syllables: Cyrillic and Greek letter
+// by letter, kana mora by mora, Hangul by its jamo, Han one character a syllable.
 const CYRILLIC = {"а": ["AA"], "б": ["B"], "в": ["V"], "г": ["G"], "д": ["D"], "е": ["EH"], "ё": ["OW"], "ж": ["ZH"], "з": ["Z"], "и": ["IY"], "й": ["Y"], "к": ["K"], "л": ["L"], "м": ["M"], "н": ["N"], "о": ["AA"], "п": ["P"], "р": ["R"], "с": ["S"], "т": ["T"], "у": ["UW"], "ф": ["F"], "х": ["HH"], "ц": ["T", "S"], "ч": ["CH"], "ш": ["SH"], "щ": ["SH"], "ъ": [], "ы": ["IH"], "ь": [], "э": ["EH"], "ю": ["UW"], "я": ["AA"], "і": ["IY"], "ї": ["IY"], "є": ["EH"], "ґ": ["G"]};
 const CYR_IOTATED = new Set(["е", "ю", "я", "ё", "є", "ї"]);
 const CYR_VOWELS = new Set(["а", "е", "и", "о", "у", "ы", "э", "ю", "я", "ё", "є", "і", "ї"]);
 
 function cyrillicPhones(w) {
-  const cs = [...w];
-  if (!cs.some(c => c in CYRILLIC)) return null;
-  const out = [];
+  if (![...w].some(c => c in CYRILLIC)) return null;
+  const cs = [...w], out = [];
   for (let i = 0; i < cs.length; i++) {
     const ch = cs[i], ph = CYRILLIC[ch];
     if (!ph) continue;                      // ь, ъ and anything else silent
@@ -272,10 +273,117 @@ function cyrillicPhones(w) {
   return out.length ? out : null;
 }
 
-function skeleton(word) {
+const GREEK = {"α": ["AA"], "β": ["V"], "γ": ["G"], "δ": ["DH"], "ε": ["EH"], "ζ": ["Z"], "η": ["IY"], "θ": ["TH"], "ι": ["IY"], "κ": ["K"], "λ": ["L"], "μ": ["M"], "ν": ["N"], "ξ": ["K", "S"], "ο": ["OW"], "π": ["P"], "ρ": ["R"], "σ": ["S"], "ς": ["S"], "τ": ["T"], "υ": ["IY"], "φ": ["F"], "χ": ["HH"], "ψ": ["P", "S"], "ω": ["OW"], "ά": ["AA"], "έ": ["EH"], "ή": ["IY"], "ί": ["IY"], "ό": ["OW"], "ύ": ["IY"], "ώ": ["OW"], "ϊ": ["IY"], "ϋ": ["IY"], "ΐ": ["IY"], "ΰ": ["IY"]};
+
+function greekPhones(w) {
+  const out = [];
+  let any = false;
+  for (const ch of w) {
+    const ph = GREEK[ch];
+    if (!ph) continue;
+    any = true;
+    out.push(...ph);
+  }
+  if (!any) return null;
+  if (out.length && !out.some(p => VOWELS.has(p))) out.push("AH");
+  return out.length ? out : null;
+}
+
+// Kana are mora: one consonant plus one vowel each, so kana give an exact count.
+const KANA = {"あ": ["AA"], "い": ["IY"], "う": ["UW"], "え": ["EH"], "お": ["OW"], "か": ["K", "AA"], "き": ["K", "IY"], "く": ["K", "UW"], "け": ["K", "EH"], "こ": ["K", "OW"], "さ": ["S", "AA"], "し": ["SH", "IY"], "す": ["S", "UW"], "せ": ["S", "EH"], "そ": ["S", "OW"], "た": ["T", "AA"], "ち": ["CH", "IY"], "つ": ["T", "S", "UW"], "て": ["T", "EH"], "と": ["T", "OW"], "な": ["N", "AA"], "に": ["N", "IY"], "ぬ": ["N", "UW"], "ね": ["N", "EH"], "の": ["N", "OW"], "は": ["HH", "AA"], "ひ": ["HH", "IY"], "ふ": ["F", "UW"], "へ": ["HH", "EH"], "ほ": ["HH", "OW"], "ま": ["M", "AA"], "み": ["M", "IY"], "む": ["M", "UW"], "め": ["M", "EH"], "も": ["M", "OW"], "ら": ["R", "AA"], "り": ["R", "IY"], "る": ["R", "UW"], "れ": ["R", "EH"], "ろ": ["R", "OW"], "が": ["G", "AA"], "ぎ": ["G", "IY"], "ぐ": ["G", "UW"], "げ": ["G", "EH"], "ご": ["G", "OW"], "ざ": ["Z", "AA"], "じ": ["JH", "IY"], "ず": ["Z", "UW"], "ぜ": ["Z", "EH"], "ぞ": ["Z", "OW"], "だ": ["D", "AA"], "ぢ": ["JH", "IY"], "づ": ["Z", "UW"], "で": ["D", "EH"], "ど": ["D", "OW"], "ば": ["B", "AA"], "び": ["B", "IY"], "ぶ": ["B", "UW"], "べ": ["B", "EH"], "ぼ": ["B", "OW"], "ぱ": ["P", "AA"], "ぴ": ["P", "IY"], "ぷ": ["P", "UW"], "ぺ": ["P", "EH"], "ぽ": ["P", "OW"], "や": ["Y", "AA"], "ゆ": ["Y", "UW"], "よ": ["Y", "OW"], "わ": ["W", "AA"], "ゐ": ["W", "IY"], "ゑ": ["W", "EH"], "を": ["OW"], "ん": ["N"], "ゔ": ["V", "UW"]};
+const SMALL_KANA = {"ゃ": "AA", "ゅ": "UW", "ょ": "OW", "ぁ": "AA", "ぃ": "IY", "ぅ": "UW", "ぇ": "EH", "ぉ": "OW"};
+const PALATAL = new Set(["B", "CH", "G", "HH", "JH", "K", "M", "N", "P", "R", "S", "SH", "T", "Z"]);
+const HAN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff々]/;
+const KANA_HINT = /[\u3041-\u3096\u30a1-\u30fa]/;
+
+// Hangul syllables decompose into initial, vowel and optional final jamo.
+const HANGUL_INITIAL = [["K"], ["K"], ["N"], ["T"], ["T"], ["R"], ["M"], ["P"], ["P"], ["S"], ["S"], [], ["JH"], ["JH"], ["CH"], ["K"], ["T"], ["P"], ["HH"]];
+const HANGUL_VOWEL = [["AA"], ["EH"], ["Y", "AA"], ["Y", "EH"], ["AH"], ["EH"], ["Y", "AH"], ["Y", "EH"], ["OW"], ["W", "AA"], ["W", "EH"], ["W", "EH"], ["Y", "OW"], ["UW"], ["W", "AH"], ["W", "EH"], ["W", "IY"], ["Y", "UW"], ["IH"], ["IH"], ["IY"]];
+const HANGUL_FINAL = [[], ["K"], ["K"], ["K"], ["N"], ["N"], ["N"], ["T"], ["L"], ["K"], ["M"], ["L"], ["L"], ["L"], ["P"], ["L"], ["M"], ["P"], ["P"], ["T"], ["T"], ["NG"], ["T"], ["T"], ["K"], ["T"], ["P"], ["T"]];
+
+// Mora by mora: sokuon geminates, the long mark lengthens, yoon palatalises.
+function japanesePhones(w) {
+  const out = [];
+  let i = 0;
+  while (i < w.length) {
+    const ch = w[i];
+    if (ch === "っ") {
+      for (let k = i + 1; k < w.length; k++) {
+        const ph = KANA[w[k]];
+        if (ph && ph.length) {
+          const cons = ph.find(p => CONSONANTS.has(p));
+          if (cons) out.push(cons);
+          break;
+        }
+      }
+      i++;
+    } else if (ch === "ー") {
+      let v = null;
+      for (let k = out.length - 1; k >= 0; k--) if (VOWELS.has(out[k])) { v = out[k]; break; }
+      if (v) out.push(v);
+      i++;
+    } else if (KANA[ch]) {
+      const ph = KANA[ch];
+      const small = i + 1 < w.length ? w[i + 1] : "";
+      if (small in SMALL_KANA && ph.length > 1 && PALATAL.has(ph[0])) {
+        out.push(ph[0], "Y", SMALL_KANA[small]);
+        i += 2;
+      } else {
+        out.push(...ph);
+        i++;
+      }
+    } else i++;
+  }
+  return out;
+}
+
+function hangulPhones(w) {
+  const out = [];
+  for (const ch of w) {
+    const code = ch.codePointAt(0);
+    if (code < 0xAC00 || code > 0xD7A3) continue;
+    const s = code - 0xAC00;
+    out.push(...HANGUL_INITIAL[Math.floor(s / 588)]);
+    out.push(...HANGUL_VOWEL[Math.floor((s % 588) / 28)]);
+    out.push(...HANGUL_FINAL[s % 28]);
+  }
+  return out.length ? out : null;
+}
+
+// Kana read mora by mora, Han characters counted: Japanese kanji average about
+// two mora, Chinese characters one syllable, so the caller says which.
+function cjkPhones(w, japanese) {
+  w = [...w].map(c => (c >= "\u30a1" && c <= "\u30f6")
+    ? String.fromCharCode(c.charCodeAt(0) - 0x60) : c).join("");
+  const out = [];
+  let i = 0;
+  while (i < w.length) {
+    const ch = w[i];
+    if (KANA[ch] || ch === "っ" || ch === "ー" || ch in SMALL_KANA) {
+      let stop = i + 1;
+      while (stop < w.length && (KANA[w[stop]] || w[stop] === "っ" ||
+             w[stop] === "ー" || w[stop] in SMALL_KANA)) stop++;
+      out.push(...japanesePhones(w.slice(i, stop)));
+      i = stop;
+    } else if (HAN.test(ch)) {
+      for (let k = 0; k < (japanese ? 2 : 1); k++) out.push("AH");
+      i++;
+    } else i++;
+  }
+  return out;
+}
+
+function skeleton(word, japanese) {
   const w = word.toLowerCase();
-  const cyr = cyrillicPhones(w);
-  if (cyr) return cyr;
+  if (japanese === undefined || japanese === null) japanese = KANA_HINT.test(w);
+  for (const read of [cyrillicPhones, greekPhones, hangulPhones]) {
+    const ph = read(w);
+    if (ph) return ph;
+  }
+  if (KANA_HINT.test(w) || HAN.test(w)) {
+    const ph = cjkPhones(w, japanese);
+    if (ph.length) return ph;
+  }
   const letters = [...w].filter(c => /\p{L}/u.test(c));
   let k = letters.filter(c => VOWEL_LETTERS.has(c)).length;
   if (!k) k = Math.ceil(letters.length / 3);   // no vowel letters we know
@@ -288,6 +396,8 @@ function skeleton(word) {
 // sung, so they contribute no phones, but they stay in the output.
 function parseLyrics(text, dict) {
   const lines = [];
+  // kana anywhere in the lyric: Han characters are kanji, about two mora each
+  const japanese = /[\u3041-\u3096\u30a1-\u30fa]/.test(text);
   for (const raw of text.split(/\r?\n/)) {
     if (!raw.trim()) continue;
     const sung = raw.replace(/\[[^\]]*\]/g, " ");
@@ -298,7 +408,7 @@ function parseLyrics(text, dict) {
       // a word nothing can pronounce gets placeholder vowels, one per
       // syllable, so it keeps its place and still takes audio
       const ph = resolvePhones(tok, dict);
-      words.push({ text: tok, phones: ph || skeleton(tok), skel: !ph });
+      words.push({ text: tok, phones: ph || skeleton(tok, japanese), skel: !ph });
     }
     lines.push({ text: raw.trim(), words });
   }

@@ -34,7 +34,7 @@ assigned to no lyric.
 pip install -e .
 ```
 
-CMUdict handles ordinary English vocabulary. Contractions, suffixes, prefixes, hyphenated compounds and numbers are constructed. `espeak-ng` is optional and consulted next. Without it (i.e. in the browser), a letter-to-sound pass covers what is left. Cyrillic is read letter by letter, and a word in any other script gets a placeholder vowel per syllable, so it still takes time and keeps its place in the output.
+CMUdict handles ordinary English vocabulary. Contractions, suffixes, prefixes, hyphenated compounds and numbers are constructed. `espeak-ng` is optional and consulted next. Without it (i.e. in the browser), a letter-to-sound pass covers what is left. Some scripts get special handling. A word in any other unsupported script gets a placeholder vowel per syllable.
 
 ## Use
 

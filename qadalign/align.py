@@ -54,6 +54,8 @@ def parse_lyrics(text: str):
     is placed from its neighbours.
     """
     lines, oov = [], {}
+    # kana anywhere in the lyric: Han characters are kanji, about two mora each
+    japanese = bool(re.search(r"[\u3041-\u3096\u30a1-\u30fa]", text))
     for raw in text.splitlines():
         line = raw.strip()
         if not line:
@@ -63,7 +65,7 @@ def parse_lyrics(text: str):
             if not any(c.isalnum() for c in tok) or set(tok) == {"*"}:
                 continue
             phones = g2p.phones_for(tok, oov)
-            words.append({"w": tok, "phones": phones or g2p.skeleton(tok),
+            words.append({"w": tok, "phones": phones or g2p.skeleton(tok, japanese),
                           "skel": not phones})
         lines.append({"text": line, "words": words})
     return lines

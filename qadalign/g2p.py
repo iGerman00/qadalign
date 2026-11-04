@@ -130,6 +130,7 @@ _LTS = [
 ]
 _VOWELS = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY",
            "OW", "OY", "UH", "UW"}
+_CONSONANTS = set(PHONE2ID) - _VOWELS
 _C_SOFT = ("e", "i", "y")
 _MAGIC = {"a": "EY", "e": "IY", "i": "AY", "o": "OW", "u": "UW"}
 
@@ -422,18 +423,162 @@ def _cyrillic(w: str) -> list[str] | None:
     return out or None
 
 
-def skeleton(word: str) -> list[str]:
+# Kana are mora: one consonant plus one vowel each, so a lyric written in kana
+# gives the path its exact phone count. Read katakana as hiragana.
+_JP_VOWELS = ["AA", "IY", "UW", "EH", "OW"]
+_KANA_ROWS = [
+    ("", "あいうえお"), ("K", "かきくけこ"), ("S", "さしすせそ"),
+    ("T", "たちつてと"), ("N", "なにぬねの"), ("HH", "はひふへほ"),
+    ("M", "まみむめも"), ("R", "らりるれろ"), ("G", "がぎぐげご"),
+    ("Z", "ざじずぜぞ"), ("D", "だぢづでど"), ("B", "ばびぶべぼ"),
+    ("P", "ぱぴぷぺぽ"),
+]
+_KANA = {ch: ([c] if c else []) + [v]
+         for c, row in _KANA_ROWS for ch, v in zip(row, _JP_VOWELS)}
+_KANA.update({
+    "や": ["Y", "AA"], "ゆ": ["Y", "UW"], "よ": ["Y", "OW"],
+    "わ": ["W", "AA"], "ゐ": ["W", "IY"], "ゑ": ["W", "EH"], "を": ["OW"],
+    "ん": ["N"], "ゔ": ["V", "UW"],
+    "し": ["SH", "IY"], "ち": ["CH", "IY"], "つ": ["T", "S", "UW"],
+    "じ": ["JH", "IY"], "ぢ": ["JH", "IY"], "づ": ["Z", "UW"], "ふ": ["F", "UW"],
+})
+_SMALL_KANA = {"ゃ": "AA", "ゅ": "UW", "ょ": "OW", "ぁ": "AA", "ぃ": "IY",
+               "ぅ": "UW", "ぇ": "EH", "ぉ": "OW"}
+_PALATAL = {"K", "S", "T", "CH", "SH", "N", "HH", "M", "R", "G", "Z", "JH", "B", "P"}
+_HAN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff々]")
+_KANA_HINT = re.compile(r"[\u3041-\u3096\u30a1-\u30fa]")
+
+# Hangul syllables decompose into initial, vowel and optional final jamo, so a
+# block gives one vowel and its consonants.
+_HANGUL_INITIAL = [
+    ["K"], ["K"], ["N"], ["T"], ["T"], ["R"], ["M"], ["P"], ["P"], ["S"], ["S"],
+    [], ["JH"], ["JH"], ["CH"], ["K"], ["T"], ["P"], ["HH"],
+]
+_HANGUL_VOWEL = [
+    ["AA"], ["EH"], ["Y", "AA"], ["Y", "EH"], ["AH"], ["EH"], ["Y", "AH"],
+    ["Y", "EH"], ["OW"], ["W", "AA"], ["W", "EH"], ["W", "EH"], ["Y", "OW"],
+    ["UW"], ["W", "AH"], ["W", "EH"], ["W", "IY"], ["Y", "UW"], ["IH"],
+    ["IH"], ["IY"],
+]
+_HANGUL_FINAL = [
+    [], ["K"], ["K"], ["K"], ["N"], ["N"], ["N"], ["T"], ["L"], ["K"], ["M"],
+    ["L"], ["L"], ["L"], ["P"], ["L"], ["M"], ["P"], ["P"], ["T"], ["T"],
+    ["NG"], ["T"], ["T"], ["K"], ["T"], ["P"], ["T"],
+]
+
+_GREEK = {
+    "α": ["AA"], "β": ["V"], "γ": ["G"], "δ": ["DH"], "ε": ["EH"], "ζ": ["Z"],
+    "η": ["IY"], "θ": ["TH"], "ι": ["IY"], "κ": ["K"], "λ": ["L"], "μ": ["M"],
+    "ν": ["N"], "ξ": ["K", "S"], "ο": ["OW"], "π": ["P"], "ρ": ["R"], "σ": ["S"],
+    "ς": ["S"], "τ": ["T"], "υ": ["IY"], "φ": ["F"], "χ": ["HH"], "ψ": ["P", "S"],
+    "ω": ["OW"], "ά": ["AA"], "έ": ["EH"], "ή": ["IY"], "ί": ["IY"], "ό": ["OW"],
+    "ύ": ["IY"], "ώ": ["OW"], "ϊ": ["IY"], "ϋ": ["IY"], "ΐ": ["IY"], "ΰ": ["IY"],
+}
+
+
+def _japanese(w: str) -> list[str]:
+    """Mora by mora: sokuon geminates, the long mark lengthens, yōon palatalises."""
+    out, i = [], 0
+    while i < len(w):
+        ch = w[i]
+        if ch == "っ":
+            for c in w[i + 1:]:
+                ph = _KANA.get(c)
+                if ph:
+                    cons = next((p for p in ph if p in _CONSONANTS), None)
+                    if cons:
+                        out.append(cons)
+                    break
+            i += 1
+        elif ch == "ー":
+            v = next((p for p in reversed(out) if p in _VOWELS), None)
+            if v:
+                out.append(v)
+            i += 1
+        elif ch in _KANA:
+            ph = _KANA[ch]
+            small = w[i + 1] if i + 1 < len(w) else ""
+            if small in _SMALL_KANA and len(ph) > 1 and ph[0] in _PALATAL:
+                out += [ph[0], "Y", _SMALL_KANA[small]]
+                i += 2
+            else:
+                out += ph
+                i += 1
+        else:
+            i += 1
+    return out
+
+
+def _greek(w: str) -> list[str] | None:
+    if not any(c in _GREEK for c in w):
+        return None
+    out = []
+    for ch in w:
+        out += _GREEK.get(ch, [])
+    if out and not any(p in _VOWELS for p in out):
+        out.append("AH")
+    return out or None
+
+
+def _hangul(w: str) -> list[str] | None:
+    out = []
+    for ch in w:
+        code = ord(ch)
+        if not 0xAC00 <= code <= 0xD7A3:
+            continue
+        s = code - 0xAC00
+        out += _HANGUL_INITIAL[s // 588]
+        out += _HANGUL_VOWEL[(s % 588) // 28]
+        out += _HANGUL_FINAL[s % 28]
+    return out or None
+
+
+def _cjk(w: str, japanese: bool) -> list[str]:
+    """Kana read mora by mora, Han characters counted.
+
+    Japanese kanji average about two mora, Chinese characters one syllable; a
+    line with kana in it is Japanese, so the caller says which.
+    """
+    # katakana folds onto hiragana by a fixed offset, one table for both
+    w = "".join(chr(ord(c) - 0x60) if "\u30a1" <= c <= "\u30f6" else c for c in w)
+    out, i = [], 0
+    while i < len(w):
+        ch = w[i]
+        if ch in _KANA or ch in "っー" or ch in _SMALL_KANA:
+            stop = i + 1
+            while stop < len(w) and (w[stop] in _KANA or w[stop] in "っー"
+                                     or w[stop] in _SMALL_KANA):
+                stop += 1
+            out += _japanese(w[i:stop])
+            i = stop
+        elif _HAN.match(ch):
+            out += ["AH"] * (2 if japanese else 1)
+            i += 1
+        else:
+            i += 1
+    return out
+
+
+def skeleton(word: str, japanese: bool | None = None) -> list[str]:
     """Phones for a word no dictionary or letter-to-sound step can reach.
 
-    Cyrillic is read letter by letter. Any other script gets one placeholder
-    vowel per syllable, which is enough for the CTC path to stretch over the
-    sung syllables and place the word; a word with no time at all would be
-    pushed into its neighbour's silence.
+    Cyrillic and Greek are read letter by letter, kana mora by mora, Hangul by
+    its jamo, and Han characters by a syllable each. Any other script gets one
+    placeholder vowel per estimated syllable. The path only needs a sequence
+    long enough to stretch over the sung vowels, or the word is pushed into its
+    neighbour's silence.
     """
     w = word.lower()
-    ph = _cyrillic(w)
-    if ph:
-        return ph
+    if japanese is None:
+        japanese = bool(_KANA_HINT.search(w))
+    for read in (_cyrillic, _greek, _hangul):
+        ph = read(w)
+        if ph:
+            return ph
+    if _KANA_HINT.search(w) or _HAN.search(w):
+        ph = _cjk(w, japanese)
+        if ph:
+            return ph
     letters = [c for c in w if c.isalpha()]
     k = sum(1 for c in letters if c in _VOWEL_LETTERS)
     if not k:
